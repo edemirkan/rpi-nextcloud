@@ -1,0 +1,58 @@
+FROM golang:1.15.8-alpine AS go-builder
+
+ARG DOCKER_GEN_VERSION=0.7.4
+LABEL stage=intermediate
+
+# Install build dependencies and build docker-gen
+RUN apk add --no-cache --virtual .build-deps \
+        curl \
+        gcc \
+        git \
+        make \
+        musl-dev \
+    && go get github.com/jwilder/docker-gen \
+    && cd /go/src/github.com/jwilder/docker-gen \
+    && git -c advice.detachedHead=false checkout $DOCKER_GEN_VERSION \
+    && make get-deps \
+    && make all \
+    && go clean -cache \
+    && mv docker-gen /usr/local/bin/ \
+    && rm -rf /go/src \
+    && apk del .build-deps
+
+FROM alpine:3.13.4
+
+LABEL maintainer="Nicolas Duchon <nicolas.duchon@gmail.com>"
+
+ARG GIT_DESCRIBE
+ARG ACMESH_VERSION=2.8.8
+ARG ACME_COMPANION_VERSION=2.1.0
+
+ENV COMPANION_VERSION=$GIT_DESCRIBE \
+    DOCKER_HOST=unix:///var/run/docker.sock \
+    PATH=$PATH:/app
+
+# Copy docker-gen binary from build stage
+COPY --from=go-builder /usr/local/bin/docker-gen /usr/local/bin/
+
+# Install packages required by the image
+RUN apk add --no-cache --virtual .bin-deps \
+        bash \
+        coreutils \
+        curl \
+        jq \
+        openssl \
+        socat
+
+# Install acme.sh and the letsencrypt service
+RUN mkdir /companion-src \
+    && curl -sSL https://github.com/nginx-proxy/acme-companion/archive/refs/tags/v${ACME_COMPANION_VERSION}.tar.gz \
+    | tar -C /companion-src -xz \
+    && mv /companion-src/acme-companion-${ACME_COMPANION_VERSION}/app /app \
+    && /companion-src/acme-companion-${ACME_COMPANION_VERSION}/install_acme.sh \
+    && rm -rf /companion-src
+
+WORKDIR /app
+
+ENTRYPOINT [ "/bin/bash", "/app/entrypoint.sh" ]
+CMD [ "/bin/bash", "/app/start.sh" ]
