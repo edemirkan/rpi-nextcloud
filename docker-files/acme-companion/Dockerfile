@@ -1,28 +1,24 @@
-FROM golang:1.15.8-alpine AS go-builder
+FROM golang:1.16.5-alpine AS go-builder
 
-ARG DOCKER_GEN_VERSION=0.7.4
+ARG DOCKER_GEN_VERSION=0.7.6
 LABEL stage=intermediate
 
-# Install build dependencies and build docker-gen
-RUN apk add --no-cache --virtual .build-deps \
-        curl \
-        gcc \
-        git \
-        make \
-        musl-dev \
-    && go get github.com/jwilder/docker-gen \
-    && cd /go/src/github.com/jwilder/docker-gen \
+# Build docker-gen
+RUN apk add --no-cache --virtual .build-deps git \
+    && git clone https://github.com/nginx-proxy/docker-gen \
+    && cd /go/docker-gen \
     && git -c advice.detachedHead=false checkout $DOCKER_GEN_VERSION \
-    && make get-deps \
-    && make all \
+    && go mod download \
+    && CGO_ENABLED=0 go build -ldflags "-X main.buildVersion=${VERSION}" -o docker-gen ./cmd/docker-gen \
     && go clean -cache \
     && mv docker-gen /usr/local/bin/ \
-    && rm -rf /go/src \
+    && cd - \
+    && rm -rf /go/docker-gen \
     && apk del .build-deps
 
-FROM alpine:3.13.4
+FROM alpine:3.13.5
 
-LABEL maintainer="Nicolas Duchon <nicolas.duchon@gmail.com>"
+LABEL maintainer="Nicolas Duchon <nicolas.duchon@gmail.com> (@buchdag)"
 
 ARG GIT_DESCRIBE
 ARG ACMESH_VERSION=2.8.8
@@ -32,9 +28,6 @@ ENV COMPANION_VERSION=$GIT_DESCRIBE \
     DOCKER_HOST=unix:///var/run/docker.sock \
     PATH=$PATH:/app
 
-# Copy docker-gen binary from build stage
-COPY --from=go-builder /usr/local/bin/docker-gen /usr/local/bin/
-
 # Install packages required by the image
 RUN apk add --no-cache --virtual .bin-deps \
         bash \
@@ -43,6 +36,10 @@ RUN apk add --no-cache --virtual .bin-deps \
         jq \
         openssl \
         socat
+
+# Copy docker-gen binary from build stage
+COPY --from=go-builder /usr/local/bin/docker-gen /usr/local/bin/
+
 
 # Install acme.sh and the letsencrypt service
 RUN mkdir /companion-src \

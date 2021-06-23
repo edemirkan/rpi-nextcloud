@@ -1,31 +1,27 @@
-FROM golang:1.15.8-alpine AS go-builder
+FROM golang:1.16-alpine AS go-builder
 
-ARG DOCKER_GEN_VERSION=0.7.4
+ARG DOCKER_GEN_VERSION=0.7.6
 LABEL stage=intermediate
 
-# Install build dependencies and build docker-gen
-RUN apk add --no-cache --virtual .build-deps \
-        curl \
-        gcc \
-        git \
-        make \
-        musl-dev \
-    && go get github.com/jwilder/docker-gen \
-    && cd /go/src/github.com/jwilder/docker-gen \
+# Build docker-gen
+RUN apk add --no-cache --virtual .build-deps git \
+    && git clone https://github.com/nginx-proxy/docker-gen \
+    && cd /go/docker-gen \
     && git -c advice.detachedHead=false checkout $DOCKER_GEN_VERSION \
-    && make get-deps \
-    && make all \
+    && go mod download \
+    && CGO_ENABLED=0 go build -ldflags "-X main.buildVersion=${VERSION}" -o docker-gen ./cmd/docker-gen \
     && go clean -cache \
     && mv docker-gen /usr/local/bin/ \
-    && rm -rf /go/src \
+    && cd - \
+    && rm -rf /go/docker-gen \
     && apk del .build-deps
 
-FROM alpine:3.13.4
+FROM alpine:3.13
 
-LABEL maintainer="Nicolas Duchon <nicolas.duchon@gmail.com>"
+LABEL maintainer="Jason Wilder <mail@jasonwilder.com>"
 
 # DOCKER_GEN_VERSION environment variable is required by acme-companion
-ENV DOCKER_GEN_VERSION=0.7.4 \
+ENV DOCKER_GEN_VERSION=0.7.6 \
     DOCKER_HOST=unix:///tmp/docker.sock
 
 # Copy docker-gen binary from build stage
