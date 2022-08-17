@@ -22,8 +22,6 @@ services:
       - proxy-network
   
   docker-gen:
-    build:
-      context: ./docker-files/docker-gen
     image: aveferrum/docker-gen:latest
     labels:
       com.github.jrcs.letsencrypt_nginx_proxy_companion.docker_gen: "true"
@@ -47,8 +45,6 @@ services:
       - proxy-network
     
   acme-companion:
-    build:
-      context: ./docker-files/acme-companion
     image: aveferrum/acme-companion:latest
     container_name: ${INSTANCE_PREFIX:-mycloud}_acme_companion
     restart: always

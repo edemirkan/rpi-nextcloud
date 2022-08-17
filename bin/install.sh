@@ -79,7 +79,6 @@ docker network create ${INSTANCE_PREFIX}-nextcloud-network $NEXTCLOUD_NETWORK_OP
 docker-compose pull
 
 # 7. Release the kraken!
-
 docker-compose up -d
 
 exit 0
