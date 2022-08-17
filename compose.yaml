@@ -1,6 +1,6 @@
 services:
   nginx-proxy:
-    image: nginx:stable-alpine
+    image: docker.io/nginx:stable-alpine
     labels:
       com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: "true"
     container_name: ${INSTANCE_PREFIX:-mycloud}_nginx_proxy
@@ -22,7 +22,7 @@ services:
       - proxy-network
   
   docker-gen:
-    image: aveferrum/docker-gen:latest
+    image: docker.io/aveferrum/docker-gen:latest
     labels:
       com.github.jrcs.letsencrypt_nginx_proxy_companion.docker_gen: "true"
     command: -notify-sighup ${INSTANCE_PREFIX:-mycloud}_nginx_proxy -watch -wait 5s:30s /etc/docker-gen/templates/nginx.tmpl /etc/nginx/conf.d/default.conf
@@ -45,7 +45,7 @@ services:
       - proxy-network
     
   acme-companion:
-    image: aveferrum/acme-companion:latest
+    image: docker.io/aveferrum/acme-companion:latest
     container_name: ${INSTANCE_PREFIX:-mycloud}_acme_companion
     restart: always
     volumes:
@@ -67,7 +67,7 @@ services:
       - proxy-network
     
   nextcloud-database:
-    image: postgres:13-alpine
+    image: docker.io/postgres:13-alpine
     container_name: ${INSTANCE_PREFIX:-mycloud}_database
     restart: always
     volumes:
@@ -78,7 +78,7 @@ services:
       - nextcloud-network
 
   nextcloud-app:
-    image: nextcloud:fpm-alpine
+    image: docker.io/nextcloud:fpm-alpine
     container_name: ${INSTANCE_PREFIX:-mycloud}_app
     restart: always
     volumes: 
@@ -93,7 +93,7 @@ services:
       - nextcloud-network
 
   nextcloud-web:
-    image: nginx:alpine
+    image: docker.io/nginx:alpine
     container_name: ${INSTANCE_PREFIX:-mycloud}_web
     restart: always
     expose:
