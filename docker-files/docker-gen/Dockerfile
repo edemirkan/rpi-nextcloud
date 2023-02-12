@@ -14,7 +14,7 @@ RUN apk add --no-cache --virtual .build-deps git \
     && go mod download \
     && GOOS=linux CGO_ENABLED=0 go build -ldflags "-X main.buildVersion=${DOCKER_GEN_VERSION}" -o docker-gen ./cmd/docker-gen
 
-FROM alpine:3.17.1
+FROM alpine:3.17
 
 # DOCKER_GEN_VERSION environment variable is required by acme-companion
 ARG DOCKER_GEN_VERSION
