@@ -1,9 +1,9 @@
 FROM aveferrum/docker-gen:latest AS docker-gen
-FROM alpine:3.17.1
+FROM alpine:3.17.2
 
 ARG GIT_DESCRIBE
 ARG ACMESH_VERSION=2.9.0
-ARG ACME_COMPANION_VERSION=2.2.5
+ARG ACME_COMPANION_VERSION=2.2.6
 
 ENV COMPANION_VERSION=$GIT_DESCRIBE \
     DOCKER_HOST=unix:///var/run/docker.sock \
