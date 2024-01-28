@@ -1,5 +1,5 @@
 FROM aveferrum/docker-gen:latest AS docker-gen
-FROM alpine:3.18.5
+FROM alpine:3.18.6
 
 ARG GIT_DESCRIBE
 ARG ACMESH_VERSION=2.9.0
